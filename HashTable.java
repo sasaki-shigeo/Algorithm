@@ -127,7 +127,21 @@ public class HashTable<K, V> extends AbstractMap<K, V> {
         }
     }
 
-        class EntryIterator implements Iterator<Map.Entry<K, V>> {
+    @Override
+    public V remove(Object key) {
+        int ix = searchGET(key);
+        if (ix >= 0) {
+            V result = table_[ix].getValue();
+            table_[ix] = new SimpleEntry<>(null, null);
+            return result;
+        }
+        else {
+            return null;
+        }
+
+    }
+
+    class EntryIterator implements Iterator<Map.Entry<K, V>> {
         private int ix = 0;
         
         EntryIterator() {
