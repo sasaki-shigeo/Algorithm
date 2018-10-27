@@ -13,10 +13,10 @@ public class HashTable<K, V> extends AbstractMap<K, V> {
         this(10);
     }
 
-    protected int hash(K key) {
+    protected int hash(Object key) {
         return key.hashCode() & 0x3FFFFFFF;
     }
-    protected int hash2(K key) {
+    protected int hash2(Object key) {
         return (key.hashCode() >>> 16) + 7;
     }
 
@@ -39,11 +39,11 @@ public class HashTable<K, V> extends AbstractMap<K, V> {
 
     final int MAX_RETRY = 10;
 
-    int searchGET(K key) {
+    int searchGET(Object key) {
         return searchGET(key, table_);
     }
 
-    int searchGET(K key, Map.Entry<K, V>[] table) {
+    int searchGET(Object key, Map.Entry<K, V>[] table) {
         int ix = hash(key) % capacity();
         for (int i = 0; i < MAX_RETRY; i++) {
             if (table[ix] == null)
@@ -81,12 +81,12 @@ public class HashTable<K, V> extends AbstractMap<K, V> {
 
     @Override
     public boolean containsKey(Object key) {
-        return searchGET((K)key) >= 0;
+        return searchGET(key) >= 0;
     }
 
     @Override
     public V get(Object key) {
-        int ix = searchGET((K)key);
+        int ix = searchGET(key);
         if (ix >= 0)
             return table_[ix].getValue();
         else
@@ -95,7 +95,7 @@ public class HashTable<K, V> extends AbstractMap<K, V> {
 
     @Override
     public V getOrDefault(Object key, V defaultValue) {
-        int ix = searchGET((K)key);
+        int ix = searchGET(key);
         if (ix >= 0)
             return table_[ix].getValue();
         else
@@ -112,7 +112,7 @@ public class HashTable<K, V> extends AbstractMap<K, V> {
             V result = get(key);
 
             if (table_[ix] == null)
-                table_[ix] = new SimpleEntry(key, value);
+                table_[ix] = new SimpleEntry<>(key, value);
             else
                 table_[ix].setValue(value);
 
@@ -127,7 +127,7 @@ public class HashTable<K, V> extends AbstractMap<K, V> {
         }
     }
 
-    class EntryIterator implements Iterator<Map.Entry<K, V>> {
+        class EntryIterator implements Iterator<Map.Entry<K, V>> {
         private int ix = 0;
         
         EntryIterator() {
@@ -196,7 +196,7 @@ public class HashTable<K, V> extends AbstractMap<K, V> {
             }
 
             public boolean contains(Object key) {
-                return self.containsKey((K) key);
+                return self.containsKey(key);
             }
         };
     }
@@ -212,7 +212,7 @@ public class HashTable<K, V> extends AbstractMap<K, V> {
                 if (ix < 0)
                     continue retry;
 
-                newTable[ix] = (SimpleEntry)entry;
+                newTable[ix] = (SimpleEntry<K, V>)entry;
             }
         } while (false);
         table_ = newTable;
@@ -261,6 +261,6 @@ class SingleLinkedList<T> {
 
 class AList<K, V> extends SingleLinkedList<Map.Entry<K, V>> {
     AList(K key, V value, SingleLinkedList<Map.Entry<K, V>> cdr) {
-        super(new AbstractMap.SimpleEntry(key, value), cdr);
+        super(new AbstractMap.SimpleEntry<K, V>(key, value), cdr);
     }
 }
