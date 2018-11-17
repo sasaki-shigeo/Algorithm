@@ -247,6 +247,8 @@ public class HashTable<K, V> extends AbstractMap<K, V> {
         table.put("Denmark", "Copenhagen");
         table.put("Greece", "Athen");
         System.out.println(table);
+        table.put("Soviet", "Moscow");
+        table.remove("Soviet");
 
         for (String country: table.keySet()) {
             System.out.printf("%s: %8x %d %d\n", country, country.hashCode(), table.hash(country) % 10, table.hash2(country) % 10);
