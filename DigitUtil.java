@@ -40,7 +40,7 @@ public class DigitUtil {
         return parseInt(digits, 10);
     }
 
-    public static long praseLong(CharSequence digits, int radix) {
+    public static long parseLong(CharSequence digits, int radix) {
         if (radix <= 1 || 36 < radix) {
             throw new IllegalArgumentException("radix: " + radix);
         }
@@ -59,7 +59,71 @@ public class DigitUtil {
     }
 
     public static long parseLong(CharSequence digits) {
-        return parseLong(digits);
+        return parseLong(digits, 10);
+    }
+
+    static char digitChar(int n) {
+        return "0123456789abcdefghijklmnopqrstuvwxyz".charAt(n);
+    }
+
+    static char digitCapitalChar(int n) {
+        return "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ".charAt(n);
+    }
+
+    public static String stringOf(int n, int base) {
+        if (base > 36)
+            throw new IllegalArgumentException("to large radix: " + base);
+
+        if (n == 0)
+            return "0";
+
+        StringBuilder sb = new StringBuilder(10);
+        boolean negative = (n < 0);
+        if (negative) {
+            // don't negate N as n = - n because (-1) * Integer.MIN_VALUE == Integer.MIN_VALUE
+            sb.append(digitChar(- (n % base)));
+            n /= -base;
+        }
+        for (; n > 0; n /= base) {
+            sb.insert(0, digitChar(n % base));
+        }
+
+        if (negative)
+            sb.insert(0, '-');
+
+        return sb.toString();
+    }
+
+    public static String stringOf(int n) {
+        return stringOf(n, 10);
+    }
+
+    public static String stringOf(long n, int base) {
+        if (base > 36)
+            throw new IllegalArgumentException("to large radix: " + base);
+
+        if (n == 0)
+            return "0";
+
+        StringBuilder sb = new StringBuilder(10);
+        boolean negative = (n < 0);
+        if (negative) {
+            // don't negate N as n = - n because (-1) * Long.MIN_VALUE == Long.MIN_VALUE
+            sb.append(digitChar(- (int)(n % base)));
+            n /= -base;
+        }
+        for (; n > 0; n /= base) {
+            sb.insert(0, digitChar((int)(n % base)));
+        }
+
+        if (negative)
+            sb.insert(0, '-');
+
+        return sb.toString();
+    }
+
+    public static String stringOf(long n) {
+        return stringOf(n, 10);
     }
 
     public static boolean isValidISBN10(String code) {
@@ -127,7 +191,6 @@ public class DigitUtil {
 
         while (index < code.length()) {
             int c = code.charAt(index++);
-            System.out.printf("index = %d weight = %d c = %c\n", index, weight, c);
             if ('0' <= c && c <= '9') {
                 sum += weight * (c - '0');
                 --weight;
@@ -211,5 +274,8 @@ public class DigitUtil {
         String code5 = "4-00-010343-1"; System.out.printf("%s is %s\n", code5, isValidISBN10(code5) ? "valid" : "invalid");
         String code6 = "0-521-64176"; System.out.printf("Checkdigit of %s is %c\n", code6, checkDigitISBN10(code6));
         String code7 = "0-521-64176-4"; System.out.printf("%s is %s\n", code7, isValidISBN10(code7) ? "valid" : "invalid");
+        System.out.printf("%d == 0b%s == 0%s == 0x%s\n", 255, stringOf(255, 2), stringOf(255, 8), stringOf(255, 16));
+        System.out.printf("-100: %s; 100L: %s\n", stringOf(-100), stringOf(100L));
+        System.out.printf("MinInt: %d = %s, MinLong: %d = %s\n", Integer.MIN_VALUE, stringOf(Integer.MIN_VALUE), Long.MIN_VALUE, stringOf(Long.MIN_VALUE));
     }
 }
