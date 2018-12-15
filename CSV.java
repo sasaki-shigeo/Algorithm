@@ -8,17 +8,18 @@ enum State {
 public class CSV {
     static final int EOF = -1;
 
-    public static List<List<String>> read(Reader r) throws IOException {
+    public static List<List<String>> read(Reader reader) throws IOException {
+        PushbackReader r = new PushbackReader(reader);
         List<List<String>> table = new ArrayList<List<String>>();
         List<String> row = new ArrayList<String>();
         StringBuilder buf = new StringBuilder();
-        int c;
 
         State st = State.SEPERATOR;
         for (;;) {
+            int c = r.read();
             switch (st) {
                 case SEPERATOR:
-                    switch (c = r.read()) {
+                    switch (c) {
                         case ',':
                             row.add("");
                             continue;
@@ -28,6 +29,11 @@ public class CSV {
                             continue;
                         case ' ': case '\t':
                             continue;
+                        case '\r':
+                            c = r.read();
+                            if (c != '\n')
+                                r.unread(c);
+                            // fallthrough
                         case '\n':
                             row.add("");
                             table.add(row);
@@ -38,18 +44,22 @@ public class CSV {
                             table.add(row);
                             return table;
                         default:
-                            System.err.println(c);
                             buf.setLength(0);
                             buf.appendCodePoint(c);
                             st = State.CELL;
                             continue;
                     }
                 case CELL:
-                    switch (c = r.read()) {
+                    switch (c) {
                         case ',':
                             row.add(buf.toString());
                             st = State.SEPERATOR;
                             continue;
+                        case '\r':
+                            c = r.read();
+                            if (c != '\n')
+                                r.unread(c);
+                            // fallthrough
                         case '\n':
                             row.add(buf.toString());
                             table.add(row);
@@ -65,7 +75,7 @@ public class CSV {
                             continue;
                     }
                 case QUOTED_CELL:
-                    switch (c = r.read()) {
+                    switch (c) {
                         case '\"':
                             st = State.QUOTED_QUOTE;
                             continue;
@@ -78,11 +88,16 @@ public class CSV {
                             continue;
                     }
                 case QUOTED_QUOTE:
-                    switch (c = r.read()) {
+                    switch (c) {
                         case ',':
                             row.add(buf.toString());
                             st = State.SEPERATOR;
                             continue;
+                        case '\r':
+                            c = r.read();
+                            if (c != '\n')
+                                r.unread(c);
+                            // fallthrough
                         case '\n':
                             row.add(buf.toString());
                             table.add(row);
@@ -156,7 +171,7 @@ public class CSV {
 
     public static void main(String[] args) throws IOException {
         Writer w = new BufferedWriter(new OutputStreamWriter(System.out));
-        
+
         StringReader r = new StringReader("123, 456, 789");
         List<List<String>> table = read(r);
         System.out.println(table);
@@ -173,6 +188,11 @@ public class CSV {
         table = read(new StringReader("\"1,234\", \"45,678,901\"\n\"new\nline\""));
         System.out.println(table);
         write(w, table);
+
+        table = read(new StringReader(",,\r\n\",\",\r\n"));
+        System.out.println(table);
+        write(w, table);
+
         w.close();
     }
 }
