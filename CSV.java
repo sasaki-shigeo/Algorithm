@@ -26,6 +26,8 @@ public class CSV {
                             buf.setLength(0);
                             st = State.QUOTED_CELL;
                             continue;
+                        case ' ': case '\t':
+                            continue;
                         case '\n':
                             row.add("");
                             table.add(row);
@@ -36,6 +38,7 @@ public class CSV {
                             table.add(row);
                             return table;
                         default:
+                            System.err.println(c);
                             buf.setLength(0);
                             buf.appendCodePoint(c);
                             st = State.CELL;
@@ -86,6 +89,10 @@ public class CSV {
                             row = new ArrayList<String>();
                             st = State.SEPERATOR;
                             continue;
+                        case EOF:
+                            row.add(buf.toString());
+                            table.add(row);
+                            return table;
                         case '\"':
                             buf.append('\"');
                             st = State.QUOTED_CELL;
@@ -101,9 +108,18 @@ public class CSV {
         return str.indexOf('\"') >= 0;
     }
 
+    static final boolean hasCommaOrNewLine(CharSequence seq) {
+        for (int i = 0; i < seq.length(); i++) {
+            int c = seq.charAt(i);
+            if (c == ',' || c == '\n' || c == '\r')
+                return true;
+        }
+        return false;
+    }
+
     static final CharSequence quoteIfNecessary(Object x) {
         String str = x.toString();
-        if (hasQuote(str)) {
+        if (hasCommaOrNewLine(str)) {
             StringBuilder buf = new StringBuilder();
             buf.append('\"');
             for (int i = 0; i < str.length(); i++) {
@@ -114,30 +130,49 @@ public class CSV {
                     buf.append(str.charAt(i));
                 }
             }
+            buf.append('\"');
             return buf;
         }
         else {
-            return str;
+            return str.trim();
         }
     }
 
-    public static void write(Writer w, List<List<Object>> table) throws IOException {
-        for (List<Object> row: table) {
+    public static void write(Writer w, List<? extends List<? extends Object>> table) throws IOException {
+        for (List<? extends Object> row: table) {
             boolean firstColumn = true;
             for (Object cell: row) {
-                if (! firstColumn) {
+                if (firstColumn) {
+                    firstColumn = false;
+                }
+                else {
                     w.append(',');
                 }
                 w.append(quoteIfNecessary(cell));
             }
-            w.append('\n');
+            w.append("\r\n");
         }
-        w.close();
     }
 
     public static void main(String[] args) throws IOException {
+        Writer w = new BufferedWriter(new OutputStreamWriter(System.out));
+        
         StringReader r = new StringReader("123, 456, 789");
         List<List<String>> table = read(r);
         System.out.println(table);
+        write(w, table);
+
+        table = read(new StringReader("123\n456,1:23'45\", text, \"quoted text\""));
+        System.out.println(table);
+        write(w, table);
+
+        table = read(new StringReader("\"text contains \"\" (double quote)\""));
+        System.out.println(table);
+        write(w, table);
+
+        table = read(new StringReader("\"1,234\", \"45,678,901\"\n\"new\nline\""));
+        System.out.println(table);
+        write(w, table);
+        w.close();
     }
 }
