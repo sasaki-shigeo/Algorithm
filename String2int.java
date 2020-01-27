@@ -35,7 +35,7 @@ public class String2int {
 			}
 			else if (isDigit(c)) {
 			    st = State.DEC;
-			    result = 'c' - '0';
+			    result = c - '0';
 			    continue;
 			}
 			else {
