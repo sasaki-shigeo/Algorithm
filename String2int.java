@@ -119,6 +119,10 @@ public class String2int {
     }
 
     public static void main(String[] args) {
-	System.out.printf("0xFF = %d%n", string2int("0xFF"));
+	String[] testData = { "0", "123", "077", "0xff", "0XFF" };
+	for (String digit: testData) {
+	    System.out.printf("%s = %d%n", digit, string2int(digit));
+	}
+
     }
 }
