@@ -16,7 +16,7 @@ long str2long(char *str) {
                 }
                 else if (isdigit(c)) {
                     state = ST_DEC;
-                    result = 'c' - '0';
+                    result = c - '0';
                     continue;
                 }
                 else {
