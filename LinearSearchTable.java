@@ -3,7 +3,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Iterator;
 import java.util.AbstractMap;
-import java.util.AbstractMap.SimpleEntry;
 import java.util.AbstractSet;
 
 public class LinearSearchTable<K, V> extends AbstractMap<K, V> {
