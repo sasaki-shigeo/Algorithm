@@ -2,7 +2,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.AbstractMap.SimpleEntry;
 
-public class Table<K, V> {
+public class LinearSearchTable<K, V> {
 
     class Entry extends SimpleEntry<K, V> {
         K key;
@@ -17,11 +17,11 @@ public class Table<K, V> {
 
     protected ArrayList<Entry> table_;
 
-    public Table() {
+    public LinearSearchTable() {
         table_ = new ArrayList<>();
     }
 
-    public Table(int n) {
+    public LinearSearchTable(int n) {
         table_ = new ArrayList<>(n);
     }
 
@@ -70,6 +70,7 @@ public class Table<K, V> {
         }
     }
 
+    // Test code will be here
     public static void main(String[] args) {
 
     }
