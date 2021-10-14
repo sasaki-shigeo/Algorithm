@@ -1,6 +1,6 @@
 import scala.collection.mutable
 
-class Table[K, V] extends mutable.Map[K, V] {
+class LinearSearchTable[K, V] extends mutable.AbstractMap[K, V] {
   protected val table = new mutable.ArrayBuffer[(K,V)]
 
   private def lin_search(key: K): Int = {
@@ -21,7 +21,8 @@ class Table[K, V] extends mutable.Map[K, V] {
       Some(table(ix)._2)
   }
 
-  def +=(kv: (K, V)) = {
+  // put
+  def addOne(kv: (K, V)) = {
     val (key, value) = kv
     val ix = index(key)
     if (ix == -1)
@@ -32,7 +33,8 @@ class Table[K, V] extends mutable.Map[K, V] {
     this
   }
 
-  def -=(key: K) = {
+  // remove
+  def subtractOne(key: K) = {
     val ix = index(key)
     if (ix >= 0)
       table.remove(ix)
@@ -43,5 +45,5 @@ class Table[K, V] extends mutable.Map[K, V] {
   def iterator = table.iterator
 
   override def size: Int = table.size
-  override def clear { table.clear }
+  override def clear(): Unit = table.clear()
 }
