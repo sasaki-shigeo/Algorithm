@@ -2,7 +2,6 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.io.IOException;
 import static java.lang.Character.isDigit;
-import static java.lang.Character.isDigit;
 
 enum State { START, ZERO, DEC, OCT, X, HEX } 
 

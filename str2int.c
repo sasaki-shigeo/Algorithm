@@ -89,7 +89,7 @@ long str2long(char *str) {
                     return result;
                 }
             default:
-                (void)fprintf(stderr, "internal error\n");
+                fprintf(stderr, "internal error\n");
                 exit(1);
         }
     }
