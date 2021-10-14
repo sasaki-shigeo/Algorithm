@@ -6,7 +6,7 @@ public class HashTable<K, V> extends AbstractMap<K, V> {
     private HashTable<K, V> self = this;
 
     public HashTable(int n) {
-        table_ = new SimpleEntry[n];
+        table_ = new SimpleEntry<>[n];
     }
 
     public HashTable() {
@@ -216,8 +216,8 @@ public class HashTable<K, V> extends AbstractMap<K, V> {
     }
 
     void rehash() {
-        System.err.println("rehash is called.");
-        SimpleEntry<K, V> [] newTable;
+        // System.err.println("rehash is called.");
+        SimpleEntry<K, V>[] newTable;
 
         retry: do {
             newTable = new SimpleEntry[2 * capacity() + 1];

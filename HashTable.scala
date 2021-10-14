@@ -10,7 +10,7 @@ class HashTable[K, V](n: Int) extends mutable.AbstractMap[K, V] {
     override def size: Int = count
     def capacity: Int = table.size
 
-    override def clear {
+    override def clear(): Unit = {
         for (i <- 0 until capacity) {
             table(i) = Nil
         }
@@ -29,7 +29,7 @@ class HashTable[K, V](n: Int) extends mutable.AbstractMap[K, V] {
 
         def hasNext: Boolean = ! p.isEmpty
 
-        private def findNextBin {
+        private def findNextBin: Unit = {
             ix += 1
             if (ix >= table.size)
                 p = Nil
@@ -58,7 +58,7 @@ class HashTable[K, V](n: Int) extends mutable.AbstractMap[K, V] {
         } yield v
     }
 
-    def +=(kv: (K, V)) = {
+    def addOne(kv: (K, V)) = {
         def replaceOrAdd(alist: List[(K, V)]): List[(K, V)] = alist match {
             case Nil => { count += 1; List(kv) }
             case (k, v)::xs if k == kv._1 => kv::xs
@@ -71,7 +71,7 @@ class HashTable[K, V](n: Int) extends mutable.AbstractMap[K, V] {
     }
 
 
-    def -=(key: K) = {
+    def subtractOne(key: K) = {
         def removeIfExists(alist: List[(K, V)]): List[(K, V)] = alist match {
             case Nil => Nil
             case (k, v)::xs if k == key => { count -= 1; xs }
@@ -83,7 +83,7 @@ class HashTable[K, V](n: Int) extends mutable.AbstractMap[K, V] {
         this
     }
 
-    private def rehash {
+    private def rehash: Unit = {
         val newTable = mutable.ArraySeq.fill(2 * capacity)(Nil:List[(K, V)])
         for (kv <- this) {
             val ix = hash(kv._1)
@@ -94,7 +94,8 @@ class HashTable[K, V](n: Int) extends mutable.AbstractMap[K, V] {
 }
 
 object HashTable {
-    def main(args: Array[String]) {
+    // test code
+    def main(args: Array[String]): Unit = {
         val table = new HashTable[String, String]
         println(table)
         table += "Japan" -> "Tokyo"
