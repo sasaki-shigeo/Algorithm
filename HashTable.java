@@ -6,7 +6,7 @@ public class HashTable<K, V> extends AbstractMap<K, V> {
     private HashTable<K, V> self = this;
 
     public HashTable(int n) {
-        table_ = new SimpleEntry<>[n];
+        table_ = (SimpleEntry<K, V>[])new SimpleEntry[n];
     }
 
     public HashTable() {
@@ -133,6 +133,10 @@ public class HashTable<K, V> extends AbstractMap<K, V> {
         if (ix >= 0) {
             V result = table_[ix].getValue();
             table_[ix] = new SimpleEntry<>(null, null);
+            // SimpleEnty(null, null), exactly SimpleEnty of which the key is null,
+            // is the dummy entry that had been removed.
+            // The method searchGET must search following entries
+            // and searchPUT returns the index to the entry to register.
             return result;
         }
         else {
@@ -220,7 +224,7 @@ public class HashTable<K, V> extends AbstractMap<K, V> {
         SimpleEntry<K, V>[] newTable;
 
         retry: do {
-            newTable = new SimpleEntry[2 * capacity() + 1];
+            newTable = (SimpleEntry<K, V>[])new SimpleEntry[2 * capacity() + 1];
             for (Map.Entry<K, V> entry :entrySet()) {
                 int ix = searchPUT(entry.getKey(), newTable);
                 if (ix < 0)
@@ -254,29 +258,5 @@ public class HashTable<K, V> extends AbstractMap<K, V> {
             System.out.printf("%s: %8x %d %d\n", country, country.hashCode(), table.hash(country) % 10, table.hash2(country) % 10);
             System.out.printf("%s: %8x %d %d\n", country, country.hashCode(), table.hash(country) % 21, table.hash2(country) % 21);
         }
-    }
-}
-
-class SingleLinkedList<T> {
-    private T car;
-    private SingleLinkedList<T> cdr;
-
-    SingleLinkedList(T car, SingleLinkedList<T> cdr) {
-        this.car = car;
-        this.cdr = cdr;
-    }
-
-    T head() {
-        return car;
-    }
-
-    SingleLinkedList<T> tail() {
-        return cdr;
-    }
-}
-
-class AList<K, V> extends SingleLinkedList<Map.Entry<K, V>> {
-    AList(K key, V value, SingleLinkedList<Map.Entry<K, V>> cdr) {
-        super(new AbstractMap.SimpleEntry<K, V>(key, value), cdr);
     }
 }
