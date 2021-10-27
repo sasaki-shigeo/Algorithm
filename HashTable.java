@@ -40,16 +40,12 @@ public class HashTable<K, V> extends AbstractMap<K, V> {
     final int MAX_RETRY = 10;
 
     int searchGET(Object key) {
-        return searchGET(key, table_);
-    }
-
-    int searchGET(Object key, Map.Entry<K, V>[] table) {
         int ix = hash(key) % capacity();
         for (int i = 0; i < MAX_RETRY; i++) {
-            if (table[ix] == null)
+            if (table_[ix] == null)
                 return -1;
             else {
-                K k = table[ix].getKey();
+                K k = table_[ix].getKey();
                 if (k != null && k.equals(key)) 
                     return ix;
                
@@ -60,17 +56,13 @@ public class HashTable<K, V> extends AbstractMap<K, V> {
     }
 
     int searchPUT(K key) {
-        return searchPUT(key, table_);
-    }
-
-    int searchPUT(K key, Map.Entry<K, V>[] table) {
         int ix = hash(key) % capacity();
 
         for (int i = 0; i < MAX_RETRY; i++) {
-            if (table[ix] == null)
+            if (table_[ix] == null)
                 return ix;
             else {
-                K k = table[ix].getKey();
+                K k = table_[ix].getKey();
                 if (k == null || k.equals(key))
                     return ix;
             }
@@ -221,19 +213,22 @@ public class HashTable<K, V> extends AbstractMap<K, V> {
 
     void rehash() {
         // System.err.println("rehash is called.");
-        SimpleEntry<K, V>[] newTable;
+        SimpleEntry<K, V>[] backup = table_;
 
         retry: do {
-            newTable = (SimpleEntry<K, V>[])new SimpleEntry[2 * capacity() + 1];
-            for (Map.Entry<K, V> entry :entrySet()) {
-                int ix = searchPUT(entry.getKey(), newTable);
+            table_ = (SimpleEntry<K, V>[])new SimpleEntry[2 * capacity() + 1];
+
+            for (Map.Entry<K, V> entry :backup) {
+                if (entry == null)
+                    continue;
+
+                int ix = searchPUT(entry.getKey());
                 if (ix < 0)
                     continue retry;
 
-                newTable[ix] = (SimpleEntry<K, V>)entry;
+                table_[ix] = (SimpleEntry<K, V>)entry;
             }
         } while (false);
-        table_ = newTable;
     }
 
     public static void main(String[] args) {
