@@ -83,13 +83,13 @@ class HashTable[K, V](n: Int) extends mutable.AbstractMap[K, V] {
         this
     }
 
-    private def rehash: Unit = {
-        val newTable = mutable.ArraySeq.fill(2 * capacity)(Nil:List[(K, V)])
-        for (kv <- this) {
-            val ix = hash(kv._1)
-            newTable(ix) = kv :: newTable(ix)
-        }
-        table = newTable
+    private def rehash(): Unit = {
+        val backup = table
+        table = mutable.ArraySeq.fill(2 * capacity)(Nil:List[(K, V)])
+        for {
+            slot <- backup
+            kv <- slot
+        } addOne(kv);
     }
 }
 
@@ -104,7 +104,7 @@ object HashTable {
         println(table)
         table ++= Seq("Germany"->"Berlin", "Holand"->"Amsterdom")
         println(table)
-        table.rehash
+        table.rehash()
         println(table)
     }
 }
