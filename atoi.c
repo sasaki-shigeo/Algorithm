@@ -106,5 +106,4 @@ int main() {
         printf("%s = %d\n", *p, e_atoi(*p));
     }
     exit(0);
-}    exit(0);
 }
