@@ -44,7 +44,7 @@ public class VArray<T> extends AbstractList<T> {
     }
 
     public static void main(String[] args) {
-        VArray xs = new VArray<Integer>();
+        VArray<Integer> xs = new VArray<>();
         xs.add(1);
         xs.add(2);
         xs.add(4);
