@@ -1,7 +1,7 @@
 import scala.collection.mutable
 
 class VArray[T](initialSize: Int) extends Seq[T] {
-    protected var array = new mutable.ArraySeq[T](initialSize)
+    protected var array = new Array[AnyRef](initialSize).asInstanceOf[Array[T]]
 
     protected var limit: Int = 0
 
@@ -28,7 +28,7 @@ class VArray[T](initialSize: Int) extends Seq[T] {
 
     def +=(x: T) = {
         if (limit >= capacity) {
-            val newArray = new mutable.ArraySeq[T](2 * limit)
+            val newArray = new Array[AnyRef](2 * limit).asInstanceOf[Array[T]]
             for (i <- 0 until limit) {
                 newArray(i) = array(i)
             }
@@ -60,9 +60,11 @@ object VArray {
         varray
     }
 
-    def main(args: Array[String]) {
+    def main(args: Array[String]): Unit = {
         val xs = VArray(1, 2, 4, 8)
         println(xs)
         println(xs.mkString(", "))
+        xs += 16
+        println(xs)
     }
 }
