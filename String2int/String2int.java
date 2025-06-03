@@ -1,23 +1,58 @@
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.IOException;
-import static java.lang.Character.isDigit;
 
 enum State { START, ZERO, DEC, OCT, X, HEX } 
 
+/** 
+ * String2int is a utility class that provides methods to convert
+ * strings representing numbers in various bases (decimal, octal, hexadecimal)
+ * to their integer and long equivalents.
+ */
 public class String2int {
+
+    /**
+     * Converts a string representing a number in decimal, octal, or hexadecimal
+     * format to an integer.
+     *
+     * @param digits the string representation of the number
+     * @return the integer value of the number
+     */
     public static int string2int(String digits) {
         return (int)string2long(digits);
     }
 
+    /** 
+     * Converts a string representing a number in decimal, octal, or hexadecimal
+     * format to a long.
+     * 
+     * @param digits the string representation of the number
+     * @return the long value of the number
+     */
     public static long string2long(String digits) {
         return parseLong(new StringReader(digits));
     }
 
+    /**
+     * Wrapper function for parseLong
+     * 
+     * This function reads a numeric literal from a Reader and returns its integer value
+     * instead of long.
+     * 
+     * @param r the Reader containing the numeric literal
+     * @return the integer value of the numeric literal
+     */
     public static int parseInt(Reader r) {
         return (int)parseLong(r);
     }
 
+    /**
+     * Parses a numeric literal from a Reader and returns its long value.
+     * The numeric literal can be in decimal, octal, or hexadecimal format.
+     *
+     * @param r the Reader containing the numeric literal
+     * @return the long value of the numeric literal
+     */    
     public static long parseLong(Reader r) {
         State st = State.START; 
         long result = 0;
@@ -32,7 +67,7 @@ public class String2int {
                             st = State.ZERO;
                             continue;
                         }
-                        else if (isDigit(c)) {
+                        else if ('0' <= c && c <= '9') {
                             st = State.DEC;
                             result = c - '0';
                             continue;
@@ -54,7 +89,7 @@ public class String2int {
                             return result;
                         }
                     case DEC:
-                        if (isDigit(c)) {
+                        if ('0' <= c && c <= '9') {
                             result *= 10;
                             result += c - '0';
                             continue;
@@ -72,7 +107,7 @@ public class String2int {
                             return result;
                         }
                     case X:
-                        if (isDigit(c)) {
+                        if ('0' <= c && c <= '9') {
                             result = c - '0';
                             continue;
                         }
@@ -88,7 +123,7 @@ public class String2int {
                             throw new NumberFormatException("0x"+c);
                         }
                     case HEX:
-                        if (isDigit(c)) {
+                        if ('0' <= c && c <= '9') {
                             result *= 16;
                             result += c - '0';
                             continue;
@@ -118,9 +153,9 @@ public class String2int {
     }
 
     public static void main(String[] args) {
-	String[] testData = { "0", "123", "077", "0xff", "0XFF" };
-	for (String digit: testData) {
-	    System.out.printf("%s = %d%n", digit, string2int(digit));
-	}
+        String[] testData = { "0", "123", "077", "0xff", "0XFF" };
+        for (String digit: testData) {
+            System.out.printf("%s = %d%n", digit, string2int(digit));
+        }
     }
 }
