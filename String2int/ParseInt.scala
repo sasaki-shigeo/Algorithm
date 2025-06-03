@@ -113,55 +113,29 @@ class ParseInt(it: PushbackIterator[Char]) {
 
     // stub is this now
     def parseLong(): Long = {
-        for (ch <- it) {
+        st = State.START
+        acc = 0L
+        var ch: Char = 0
+        while (st != State.FINISH && st != State.ERROR && it.hasNext) {
+            ch = it.next()
+            // println(s"State: $st, char: $ch") // Debugging output
             val elem = transitionFunction(st, ch)
             elem.action(ch)
             st = elem.nextState
-            if (st == State.FINISH) {
-                return acc
-            }
-            else if (st == State.ERROR) {
-                throw new NumberFormatException(s"Invalid character '$ch' in input")
-            }
         }
-        acc
+        if (st == State.ERROR) {
+            throw new NumberFormatException(s"Invalid character '$ch' in input")
+        }
+
+        acc   // result value
     }
 
-    /*
-     * nextState(ST) is a syntactic gimmic.
-     * 
-     * This function must stay at the last line of the action functions;
-     * and the return values of the action functions are the next states.
-     * So it seams that nextState(ST) indicates the next state is ST.
-     * 
-     */
-    inline def nextState(st: State): State = st
-
-    def toZERO(ch: Char): State = {
-        nextState(State.ZERO)
-    }
-
-    def toDEC(ch: Char): State = {
-        result = 10 * result + (ch - '0')
-        nextState(State.DEC)
-    }
-
-    def toBIN(ch: Char): State = {
-        result = 2 * result + (ch - '0')
-        nextState(State.BIN)
-    }
-
-    def toX(ch: Char): State = {
-        nextState(State.X)
-    }
-
-    def toHEX(ch: Char): State = {
-        val d = if 'A' <= ch && ch <= 'F' then ch - 'A' + 10
-                else if 'a' <= ch && ch <= 'f' then ch - 'a' + 10
-                else ch - '0'
-        
-        result = 16 * result + d
-        nextState(State.HEX)
+    def parseInt(): Int = {
+        val result = parseLong()
+        if (result < Int.MinValue || result > Int.MaxValue) {
+            throw new NumberFormatException(s"Value out of range for int: $result")
+        }
+        result.toInt
     }
 
     def doNothing(ch: Char): Unit = { /* do nothing */ }
