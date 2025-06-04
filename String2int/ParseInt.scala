@@ -119,9 +119,9 @@ class ParseInt(it: PushbackIterator[Char]) {
         while (st != State.FINISH && st != State.ERROR && it.hasNext) {
             ch = it.next()
             // println(s"State: $st, char: $ch") // Debugging output
-            val elem = transitionFunction(st, ch)
-            elem.action(ch)
-            st = elem.nextState
+            val TransitionEntry(action, nextState) = transitionFunction(st, ch)
+            action(ch)
+            st = nextState
         }
         if (st == State.ERROR) {
             throw new NumberFormatException(s"Invalid character '$ch' in input")
@@ -161,60 +161,62 @@ class ParseInt(it: PushbackIterator[Char]) {
         acc = 16 * acc + (ch - 'a' + 10)
     }
 
+    import State._    // we can omit State. prefix below lines
+
     // This is a mock of the action table.
     // This function is executed at runtime
     // while an action table should  computed at compile time.
     def transitionFunction(st: State, ch: Char): TransitionEntry = st match {
-        case State.START => ch match {
-            case '0' => TransitionEntry(doNothing(_), State.ZERO)
+        case START => ch match {
+            case '0' => TransitionEntry(doNothing(_), ZERO)
             case '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' =>
-                TransitionEntry(accumulateDecimal(_), State.DEC)
-            case _ => TransitionEntry(pushback(_), State.FINISH)
+                TransitionEntry(accumulateDecimal(_), DEC)
+            case _ => TransitionEntry(pushback(_), FINISH)
         }
-        case State.ZERO => ch match {
+        case ZERO => ch match {
             case '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' => 
-                TransitionEntry(accumulateOctal(_), State.OCT)
-            case 'b' | 'B' => TransitionEntry(doNothing(_), State.B)
-            case 'x' | 'X' => TransitionEntry(doNothing(_), State.X)
-            case _ => TransitionEntry(pushback(_), State.FINISH)
+                TransitionEntry(accumulateOctal(_), OCT)
+            case 'b' | 'B' => TransitionEntry(doNothing(_), B)
+            case 'x' | 'X' => TransitionEntry(doNothing(_), X)
+            case _ => TransitionEntry(pushback(_), FINISH)
         }
-        case State.DEC => ch match {
+        case DEC => ch match {
             case '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' =>
-                TransitionEntry(accumulateDecimal(_), State.DEC)
-            case _ => TransitionEntry(pushback(_), State.FINISH)
+                TransitionEntry(accumulateDecimal(_), DEC)
+            case _ => TransitionEntry(pushback(_), FINISH)
         }
-        case State.OCT => ch match {
+        case OCT => ch match {
             case '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' =>
-                TransitionEntry(accumulateOctal(_), State.OCT)
-            case _ => TransitionEntry(pushback(_), State.FINISH)
+                TransitionEntry(accumulateOctal(_), OCT)
+            case _ => TransitionEntry(pushback(_), FINISH)
         }
-        case State.B => ch match {
-            case '0' | '1' => TransitionEntry(accumulateBinary(_), State.BIN)
-            case _ => TransitionEntry(pushback(_), State.ERROR)
+        case B => ch match {
+            case '0' | '1' => TransitionEntry(accumulateBinary(_), BIN)
+            case _ => TransitionEntry(pushback(_), ERROR)
         }
-        case State.BIN => ch match {
-            case '0' | '1' => TransitionEntry(accumulateBinary(_), State.BIN)
-            case _ => TransitionEntry(pushback(_), State.FINISH)
+        case BIN => ch match {
+            case '0' | '1' => TransitionEntry(accumulateBinary(_), BIN)
+            case _ => TransitionEntry(pushback(_), FINISH)
         }
-        case State.X => ch match {
+        case X => ch match {
             case '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' =>
-                TransitionEntry(accumulateHexByDecimal(_), State.HEX)
+                TransitionEntry(accumulateHexByDecimal(_), HEX)
             case 'A' | 'B' | 'C' | 'D' | 'E' | 'F' =>
-                TransitionEntry(accumulateHexByUpper(_), State.HEX)
+                TransitionEntry(accumulateHexByUpper(_), HEX)
             case 'a' | 'b' | 'c' | 'd' | 'e' | 'f' =>
-                TransitionEntry(accumulateHexByLower(_), State.HEX)
-            case _ => TransitionEntry(pushback(_), State.ERROR)
+                TransitionEntry(accumulateHexByLower(_), HEX)
+            case _ => TransitionEntry(pushback(_), ERROR)
         }
-        case State.HEX => ch match {
+        case HEX => ch match {
             case '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' =>
-                TransitionEntry(accumulateHexByDecimal(_), State.HEX)
+                TransitionEntry(accumulateHexByDecimal(_), HEX)
             case 'A' | 'B' | 'C' | 'D' | 'E' | 'F' =>
-                TransitionEntry(accumulateHexByUpper(_), State.HEX)
+                TransitionEntry(accumulateHexByUpper(_), HEX)
             case 'a' | 'b' | 'c' | 'd' | 'e' | 'f' =>
-                TransitionEntry(accumulateHexByLower(_), State.HEX)
-            case _ => TransitionEntry(pushback(_), State.FINISH)
+                TransitionEntry(accumulateHexByLower(_), HEX)
+            case _ => TransitionEntry(pushback(_), FINISH)
         }
-        case State.FINISH => TransitionEntry(doNothing(_), State.FINISH)
-        case State.ERROR => TransitionEntry(doNothing(_), State.ERROR) 
+        case FINISH => TransitionEntry(doNothing(_), FINISH)
+        case ERROR => TransitionEntry(doNothing(_), ERROR) 
     }
 }
