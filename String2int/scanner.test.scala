@@ -68,4 +68,20 @@ class scannerTest extends FunSuite {
     assertEquals(scanOnce("1e+"), IllegalToken("1e+"))
     assertEquals(scanOnce("1E+"), IllegalToken("1E+"))
   }
+
+  test("comments") {
+    assertEquals(scanOnce("// comment\n"), CommentToken("// comment"))
+    assertEquals(scanOnce("/* multi-line\ncomment */"), CommentToken("/* multi-line\ncomment */"))
+    assertEquals(scanOnce("/***/"), CommentToken("/***/"))
+    assertEquals(scanOnce("/* unclosed comment"), IllegalToken("/* unclosed comment"))
+  }
+
+  test("identifiers") {
+    assertEquals(scanOnce("a"), IdToken("a"))
+    assertEquals(scanOnce("abc123"), IdToken("abc123"))
+    assertEquals(scanOnce("snake_case"), IdToken("snake_case"))
+    assertEquals(scanOnce("_privateVar"), IdToken("_privateVar"))
+    assertEquals(scanOnce("variableName"), IdToken("variableName"))
+    assertEquals(scanOnce("ClassName"), IdToken("ClassName"))
+  }
 }

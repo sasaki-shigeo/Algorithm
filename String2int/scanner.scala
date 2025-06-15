@@ -6,6 +6,14 @@ package scanner
 import java.io.{Reader, PushbackReader, StringReader}
 import scala.annotation.tailrec
 
+var alphabets = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_"
+var punctuation = "!\"#$%&'()*+,-./:;<=>?@[\\]^`{|}~"
+
+def isAlpha(c: Int): Boolean = alphabets.indexOf(c.toChar) >= 0
+def isDigit(c: Int): Boolean = '0' <= c && c <= '9'
+def isAlnum(c: Int): Boolean = isAlpha(c) || isDigit(c) || c == '$'
+def isPunct(c: Int): Boolean = punctuation.indexOf(c.toChar) >= 0
+
 // Token data
 sealed abstract class Token {
     def literal: String
@@ -111,7 +119,9 @@ class StateMachine(r: PushbackReader) extends Iterator[Token] {
                     buf.append(c.toChar)
                     st = DOT
                     forward()
-                case START if 'A' <= c && c <= 'Z' || 'a' <= c && c <= 'z' =>
+                case START if 'A' <= c && c <= 'Z' ||
+                              'a' <= c && c <= 'z' ||
+                              c == '_' =>
                     buf.append(c.toChar)
                     st = ALPH
                     forward()
@@ -119,6 +129,7 @@ class StateMachine(r: PushbackReader) extends Iterator[Token] {
                     st = STR
                     forward()
                 case START if c == '/' =>
+                    buf.append(c.toChar)
                     st = SLASH
                     forward()
                 case START if c == ' ' || c == '\t' || c == '\n' || c == '\r' =>
