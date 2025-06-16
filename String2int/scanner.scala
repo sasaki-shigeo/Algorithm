@@ -6,14 +6,6 @@ package scanner
 import java.io.{Reader, PushbackReader, StringReader}
 import scala.annotation.tailrec
 
-var alphabets = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_"
-var punctuation = "!\"#$%&'()*+,-./:;<=>?@[\\]^`{|}~"
-
-def isAlpha(c: Int): Boolean = alphabets.indexOf(c.toChar) >= 0
-def isDigit(c: Int): Boolean = '0' <= c && c <= '9'
-def isAlnum(c: Int): Boolean = isAlpha(c) || isDigit(c) || c == '$'
-def isPunct(c: Int): Boolean = punctuation.indexOf(c.toChar) >= 0
-
 // Token data
 sealed abstract class Token {
     def literal: String
@@ -100,12 +92,12 @@ class StateMachine(r: PushbackReader) extends Iterator[Token] {
     }
 
     def next(): Token = {
-        st = State.START
+        // st = State.START
         var buf = new StringBuilder
         var acc: BigInt = 0
 
         @tailrec
-        def forward(): Token = {
+        def forward(st: State): Token = {
             try {
                 if (r.ready()) {
                     c = r.read()
@@ -120,56 +112,45 @@ class StateMachine(r: PushbackReader) extends Iterator[Token] {
                 case START if c == EOF => EOFToken
                 case START if c == '0' =>
                     buf.append(c.toChar)
-                    st = ZERO
-                    forward()
+                    forward(ZERO)
                 case START if '1' <= c && c <= '9' =>
                     buf.append(c.toChar)
                     acc = c - '0'
-                    st = DEC
-                    forward()
+                    forward(DEC)
                 case START if c == '.' =>
                     buf.append(c.toChar)
-                    st = DOT
-                    forward()
+                    forward(DOT)
                 case START if 'A' <= c && c <= 'Z' ||
                               'a' <= c && c <= 'z' ||
                               c == '_' =>
                     buf.append(c.toChar)
-                    st = ALPH
-                    forward()
+                    forward(ALPH)
                 case START if c == '/' =>
                     buf.append(c.toChar)
-                    st = SLASH
-                    forward()
+                    forward(SLASH)
                 case START if c == ' ' || c == '\t' || c == '\n' || c == '\r' =>
                     // skip whitespace
-                    forward()
+                    forward(st)
                 case START =>
                     buf.append(c.toChar)
-                    st = SYMBOL
-                    forward()
+                    forward(SYMBOL)
 
                 case ZERO if '0' <= c && c <= '7' =>
                     buf.append(c.toChar)
                     acc = 8 * acc + (c - '0')
-                    st = OCT
-                    forward()
+                    forward(OCT)
                 case ZERO if c == '_' =>
                     buf.append(c.toChar)
-                    st = OCT_SEP
-                    forward()
+                    forward(OCT_SEP)
                 case ZERO if c == 'b' || c == 'B' =>
                     buf.append(c.toChar)
-                    st = B
-                    forward()
+                    forward(B)
                 case ZERO if c == 'x' || c == 'X' =>
                     buf.append(c.toChar)
-                    st = X
-                    forward()
+                    forward(X)
                 case ZERO if c == '.' =>
                     buf.append(c.toChar)
-                    st = POINT
-                    forward()
+                    forward(POINT)
                 case ZERO if c == 'L' || c == 'l' =>
                     buf.append(c.toChar)
                     LongToken(buf.toString, 0L)
@@ -187,19 +168,16 @@ class StateMachine(r: PushbackReader) extends Iterator[Token] {
                 case DEC if '0' <= c && c <= '9' =>
                     buf.append(c.toChar)
                     acc = 10 * acc + (c - '0')
-                    forward()
+                    forward(st)
                 case DEC if c == '_' =>
                     buf.append(c.toChar)
-                    st = DEC_SEP
-                    forward()
+                    forward(DEC_SEP)
                 case DEC if c == '.' =>
                     buf.append(c.toChar)
-                    st = POINT
-                    forward()
+                    forward(POINT)
                 case DEC if c == 'e' || c == 'E' =>
                     buf.append(c.toChar)
-                    st = E
-                    forward()
+                    forward(E)
                 case DEC if c == 'L' || c == 'l' =>
                     buf.append(c.toChar)
                     LongToken(buf.toString, acc.toLong)
@@ -217,8 +195,7 @@ class StateMachine(r: PushbackReader) extends Iterator[Token] {
                 case DEC_SEP if '0' <= c && c <= '9' =>
                     buf.append(c.toChar)
                     acc = 10 * acc + (c - '0')
-                    st = DEC
-                    forward()
+                    forward(DEC)
                 case DEC_SEP => 
                     // push back the character and finish
                     r.unread(c)
@@ -227,11 +204,10 @@ class StateMachine(r: PushbackReader) extends Iterator[Token] {
                 case OCT if '0' <= c && c <= '7' =>
                     buf.append(c.toChar)
                     acc = 8 * acc + (c - '0')
-                    forward()
+                    forward(st)
                 case OCT if c == '_' =>
                     buf.append(c.toChar)
-                    st = OCT_SEP
-                    forward()
+                    forward(OCT_SEP)
                 case OCT if c == 'L' || c == 'l' =>
                     buf.append(c.toChar)
                     LongToken(buf.toString, acc.toLong)
@@ -243,8 +219,7 @@ class StateMachine(r: PushbackReader) extends Iterator[Token] {
                 case OCT_SEP if '0' <= c && c <= '7' =>
                     buf.append(c.toChar)
                     acc = 8 * acc + (c - '0')
-                    st = OCT
-                    forward()
+                    forward(OCT)
                 case OCT_SEP =>
                     // push back the character and finish
                     r.unread(c)
@@ -255,8 +230,7 @@ class StateMachine(r: PushbackReader) extends Iterator[Token] {
                 case B if c == '0' || c == '1' =>
                     buf.append(c.toChar)
                     acc = 2 * acc + (c - '0')
-                    st = BIN
-                    forward()
+                    forward(BIN)
                 case B =>
                     // push back the character and report error
                     r.unread(c)
@@ -265,12 +239,10 @@ class StateMachine(r: PushbackReader) extends Iterator[Token] {
                 case BIN if c == '0' || c == '1' =>
                     buf.append(c.toChar)
                     acc = 2 * acc + (c - '0')
-                    st = BIN
-                    forward()
+                    forward(BIN)
                 case BIN if c == '_' =>
                     buf.append(c.toChar)
-                    st = B
-                    forward()
+                    forward(B)
                 case BIN =>
                     // push back the character and finish
                     r.unread(c)
@@ -281,22 +253,18 @@ class StateMachine(r: PushbackReader) extends Iterator[Token] {
                 case X if '0' <= c && c <= '9' =>
                     buf.append(c.toChar)
                     acc = 16 * acc + (c - '0')
-                    st = HEX
-                    forward()
+                    forward(HEX)
                 case X if 'A' <= c && c <= 'F' =>
                     buf.append(c.toChar)
                     acc = 16 * acc + (c - 'A' + 10)
-                    st = HEX
-                    forward()
+                    forward(HEX)
                 case X if 'a' <= c && c <= 'f' =>
                     buf.append(c.toChar)
                     acc = 16 * acc + (c - 'a' + 10)
-                    st = HEX
-                    forward()
+                    forward(HEX)
                 case X if c == '.' =>
                     buf.append(c.toChar)
-                    st = HEXPOINT
-                    forward()
+                    forward(HEXPOINT)
                 case X =>
                     // push back the character and report error
                     r.unread(c)
@@ -305,33 +273,27 @@ class StateMachine(r: PushbackReader) extends Iterator[Token] {
                 case HEX if '0' <= c && c <= '9' =>
                     buf.append(c.toChar)
                     acc = 16 * acc + (c - '0')
-                    st = HEX
-                    forward()
+                    forward(st)
                 case HEX if 'A' <= c && c <= 'F' =>
                     buf.append(c.toChar)
                     acc = 16 * acc + (c - 'A' + 10)
-                    st = HEX
-                    forward()
+                    forward(st)
                 case HEX if 'a' <= c && c <= 'f' =>
                     buf.append(c.toChar)
                     acc = 16 * acc + (c - 'a' + 10)
-                    st = HEX
-                    forward()
+                    forward(st)
                 case HEX if c == '_' =>
                     buf.append(c.toChar)
-                    st = X
-                    forward()
+                    forward(X)
                 case HEX if c == 'L' || c == 'l' =>
                     buf.append(c.toChar)
                     LongToken(buf.toString, acc.toLong)
                 case HEX if c == '.' =>
                     buf.append(c.toChar)
-                    st = HEXFLOAT
-                    forward()
+                    forward(HEXFLOAT)
                 case HEX if c == 'p' || c == 'P' =>
                     buf.append(c.toChar)
-                    st = P
-                    forward()
+                    forward(P)
                 case HEX =>
                     // push back the character and finish
                     r.unread(c)
@@ -340,8 +302,7 @@ class StateMachine(r: PushbackReader) extends Iterator[Token] {
                 // .999 is a valid float
                 case DOT if '0' <= c && c <= '9' =>
                     buf.append(c.toChar)
-                    st = FRAC
-                    forward()
+                    forward(FRAC)
                 // this parser does not recognize ".." operator
                 case DOT =>
                     r.unread(c)
@@ -356,8 +317,8 @@ class StateMachine(r: PushbackReader) extends Iterator[Token] {
                 // because of the complexity.
                 //
                 // Note2:
-                // String.{toFloat, toDouble, toBigDecimal} 
-                // (and also String.{toInt, toLong, toBigInt})
+                // BigDecimal(_:String) and String.{toFloat, toDouble} 
+                // (and also BigInt(_:String), String.{toInt, toLong})
                 // call java.lang.*.parse* methods;
                 // but they do not accept underscores in the input strings.
                 // So, we need to remove underscores
@@ -368,13 +329,11 @@ class StateMachine(r: PushbackReader) extends Iterator[Token] {
                 // at the case of "999.9"
                 case POINT if '0' <= c && c <= '9' =>
                     buf.append(c.toChar)
-                    st = FRAC
-                    forward()
+                    forward(FRAC)
                 // at the case of "999.E", exp part is necessary
                 case POINT if c == 'e' || c == 'E' =>
                     buf.append(c.toChar)
-                    st = E
-                    forward()
+                    forward(E)
                 // at the case of "999.d" or "999.D", double literal
                 case POINT if c == 'd' || c == 'D' =>
                     buf.append(c.toChar)
@@ -398,16 +357,14 @@ class StateMachine(r: PushbackReader) extends Iterator[Token] {
 
                 case FRAC if '0' <= c && c <= '9' =>
                     buf.append(c.toChar)
-                    forward()
+                    forward(st)
                 case FRAC if c == '_' =>
                     buf.append(c.toChar)
-                    st = FRAC_SEP
-                    forward()
+                    forward(FRAC_SEP)
                 // reading ".999e", exp part is necessary
                 case FRAC if c == 'e' || c == 'E' =>
                     buf.append(c.toChar)
-                    st = E
-                    forward()
+                    forward(E)
                 // ".999d" is a double literal
                 case FRAC if c == 'd' || c == 'D' =>
                     buf.append(c.toChar)
@@ -429,8 +386,7 @@ class StateMachine(r: PushbackReader) extends Iterator[Token] {
 
                 case FRAC_SEP if '0' <= c && c <= '9' =>
                     buf.append(c.toChar)
-                    st = FRAC
-                    forward()
+                    forward(FRAC)
                 case FRAC_SEP =>
                     // push back the character and finish
                     r.unread(c)
@@ -438,12 +394,10 @@ class StateMachine(r: PushbackReader) extends Iterator[Token] {
 
                 case E if c == '+' || c == '-' =>
                     buf.append(c.toChar)
-                    st = EXP_SIGN
-                    forward()
+                    forward(EXP_SIGN)
                 case E if '0' <= c && c <= '9' =>
                     buf.append(c.toChar)
-                    st = EXP
-                    forward()
+                    forward(EXP)
                 case E =>
                     // push back the character and finish
                     r.unread(c)
@@ -451,11 +405,10 @@ class StateMachine(r: PushbackReader) extends Iterator[Token] {
 
                 case EXP if '0' <= c && c <= '9' =>
                     buf.append(c.toChar)
-                    forward()
+                    forward(st)
                 case EXP if c == '_' =>
                     buf.append(c.toChar)
-                    st = EXP_SEP
-                    forward()
+                    forward(EXP_SEP)
                 case EXP if c == 'd' || c == 'D' =>
                     buf.append(c.toChar)
                     val digits = buf.toString
@@ -470,16 +423,14 @@ class StateMachine(r: PushbackReader) extends Iterator[Token] {
                     DecimalToken(buf.toString, BigDecimal(buf.toString))
                 case EXP_SIGN if '0' <= c && c <= '9' =>
                     buf.append(c.toChar)
-                    st = EXP
-                    forward()
+                    forward(EXP)
                 case EXP_SIGN =>
                     // push back the character and finish
                     r.unread(c)
                     IllegalToken(buf.toString)
                 case EXP_SEP if '0' <= c && c <= '9' =>
                     buf.append(c.toChar)
-                    st = EXP
-                    forward()
+                    forward(EXP)
                 case EXP_SEP =>
                     // push back the character and finish
                     r.unread(c)
@@ -488,17 +439,15 @@ class StateMachine(r: PushbackReader) extends Iterator[Token] {
                 // "0xFF.", "0xFF.F", "0x.FF" ans so on
                 case HEXFLOAT if c == 'p' || c == 'P' =>
                     buf.append(c.toChar)
-                    st = P
-                    forward()
+                    forward(P)
                 case HEXFLOAT if '0' <= c && c <= '9' ||
                                  'A' <= c && c <= 'F' ||
                                  'a' <= c && c <= 'f'    =>
                     buf.append(c.toChar)
-                    forward()
+                    forward(st)
                 case HEXFLOAT if c == '_' =>
                     buf.append(c)
-                    st = HEXFLOAT_SEP
-                    forward()
+                    forward(HEXFLOAT_SEP)
                 // hexadecimal floats without 'P' are illegal
                 case HEXFLOAT =>
                     r.unread(c)
@@ -507,8 +456,7 @@ class StateMachine(r: PushbackReader) extends Iterator[Token] {
                                      'A' <= c && c <= 'F' ||
                                      'a' <= c && c <= 'f'    =>
                     buf.append(c.toChar)
-                    st = HEXFLOAT
-                    forward()
+                    forward(HEXFLOAT)
                 case HEXFLOAT_SEP =>
                     r.unread(c)
                     IllegalToken(buf.toString)
@@ -518,8 +466,7 @@ class StateMachine(r: PushbackReader) extends Iterator[Token] {
                                  'A' <= c && c <= 'F' ||
                                  'a' <= c && c <= 'f'    =>
                     buf.append(c.toChar)
-                    st = HEXFLOAT
-                    forward()
+                    forward(HEXFLOAT)
                 case HEXPOINT => 
                     // push back the character and finish
                     r.unread(c)
@@ -528,27 +475,24 @@ class StateMachine(r: PushbackReader) extends Iterator[Token] {
                 // "0xf.0p"; "[-+0-9]" needed
                 case P if c == '+' || c == '-' =>
                     buf.append(c.toChar)
-                    st = HEXEXP_SIGN
-                    forward()
+                    forward(HEXEXP_SIGN)
                 case P if '0' <= c && c <= '9' =>
                     buf.append(c.toChar)
-                    st = HEXEXP
-                    forward()
+                    forward(HEXEXP)
                 case P =>
                     r.unread(c)
                     IllegalToken(buf.toString)
 
                 case HEXEXP_SIGN if '0' <= c && c <= '9' =>
                     buf.append(c.toChar)
-                    st = HEXEXP
-                    forward()
+                    forward(HEXEXP)
                 case HEXEXP_SIGN =>
                     r.unread(c)
                     IllegalToken(buf.toString)
 
                 case HEXEXP if '0' <= c && c <= '9' =>
                     buf.append(c.toChar)
-                    forward()
+                    forward(st)
                 case HEXEXP if c == 'd' || c == 'D' =>
                     buf.append(c.toChar)
                     val digits = buf.toString
@@ -561,8 +505,7 @@ class StateMachine(r: PushbackReader) extends Iterator[Token] {
                     FloatToken(digits, flt)
                 case HEXEXP if c == '_' =>
                     buf.append(c.toChar)
-                    st = HEXEXP_SEP
-                    forward()
+                    forward(HEXEXP_SEP)
                 case HEXEXP =>
                     r.unread(c)
                     val digits = buf.toString
@@ -571,8 +514,7 @@ class StateMachine(r: PushbackReader) extends Iterator[Token] {
 
                 case HEXEXP_SEP if '0' <= c && c <= '9' =>
                     buf.append(c.toChar)
-                    st = HEXEXP
-                    forward()
+                    forward(HEXEXP)
                 case HEXEXP_SEP =>
                     r.unread(c)
                     IllegalToken(buf.toString)
@@ -580,13 +522,11 @@ class StateMachine(r: PushbackReader) extends Iterator[Token] {
                 case SLASH if c == '/' =>
                     // single line comment
                     buf.append(c.toChar)
-                    st = LINE_COMMENT
-                    forward()
+                    forward(LINE_COMMENT)
                 case SLASH if c == '*' =>
                     // multi-line comment
                     buf.append(c.toChar)
-                    st = BLOCK_COMMENT
-                    forward()
+                    forward(BLOCK_COMMENT)
                 case SLASH if c == '=' =>
                     // "/=" assignment operator
                     SymbolToken("/=")
@@ -599,19 +539,18 @@ class StateMachine(r: PushbackReader) extends Iterator[Token] {
                     CommentToken(buf.toString)
                 case LINE_COMMENT =>
                     buf.append(c.toChar)
-                    forward()
+                    forward(st)
                 case BLOCK_COMMENT if c == '*' =>
                     // detect "/* .... *"
                     buf.append(c.toChar)
-                    st = COMMENT_STAR
-                    forward()
+                    forward(COMMENT_STAR)
                 case BLOCK_COMMENT if c == EOF =>
                     // end of file in a block comment
                     IllegalToken(buf.toString)
                 case BLOCK_COMMENT =>
                     // in "/* ... */" comment
                     buf.append(c.toChar)
-                    forward()
+                    forward(st)
                 case COMMENT_STAR if c == '/' =>
                     // end of block comment "/* ... */"
                     buf.append(c.toChar)
@@ -619,7 +558,7 @@ class StateMachine(r: PushbackReader) extends Iterator[Token] {
                 case COMMENT_STAR if c == '*' =>
                     // detect "/* ... **"
                     buf.append(c.toChar)
-                    forward()
+                    forward(st)
                 case COMMENT_STAR if c == EOF =>
                     // end of file in a block comment
                     IllegalToken(buf.toString)
@@ -627,16 +566,14 @@ class StateMachine(r: PushbackReader) extends Iterator[Token] {
                     // in "/* ... *_"
                     // continue the block comment
                     buf.append(c.toChar)
-                    st = BLOCK_COMMENT
-                    forward()
+                    forward(BLOCK_COMMENT)
 
                 case ALPH if '0' <= c && c <= '9' || 
                              'A' <= c && c <= 'Z' || 
                              'a' <= c && c <= 'z' || 
                              c == '_' =>
                     buf.append(c.toChar)
-                    st = ALNUM
-                    forward()
+                    forward(ALNUM)
                 case ALPH =>
                     // push back the character and finish
                     r.unread(c)
@@ -646,7 +583,7 @@ class StateMachine(r: PushbackReader) extends Iterator[Token] {
                               'a' <= c && c <= 'z' || 
                               c == '_' =>
                     buf.append(c.toChar)
-                    forward()
+                    forward(st)
                 case ALNUM =>
                     // push back the character and finish
                     r.unread(c)
@@ -669,7 +606,7 @@ class StateMachine(r: PushbackReader) extends Iterator[Token] {
             }
         }
 
-        forward()     // the return value of next()
+        forward(START)     // the return value of next()
     }
 }
 
@@ -682,38 +619,4 @@ val punctSet: HashSet[String] = HashSet(
     "=", "==", ">", ">=", ">>", ">>=", ">>>", ">>>=",
     "?", "@", "[", "]", "^", "^=",
     "{", "|", "|=", "||", "||=", "}", "~", "~="
-)
-
-import scala.collection.immutable.IntMap
-val Empty = IntMap.empty[TrieNode]
-
-class Trie(var children: IntMap[TrieNode]) {
-    def get(key: CharSequence): Option[String] = {
-        @tailrec
-        def traverse(ix: Int, table: IntMap[TrieNode]): Option[String] = {
-            if (ix >= key.length) {
-                None
-            }
-            else {
-                val c = key.charAt(ix)
-                table.get(c) match {
-                    case None => None
-                    case Some(TrieNode(value, _)) if ix == key.length - 1 => value
-                    case Some(TrieNode(_, Empty)) => None
-                    case Some(TrieNode(_, children)) => traverse(ix + 1, children)
-                }
-            }
-        }
-        traverse(0, children)
-    }
-}
-
-case class TrieNode(value: Option[String], children: IntMap[TrieNode])
-
-val punctuationTable: Trie = new Trie(
-    IntMap('('.toInt -> TrieNode(Some("("), Empty),
-           ')'.toInt -> TrieNode(Some(")"), Empty),
-           ','.toInt -> TrieNode(Some(","), Empty),
-           ';'.toInt -> TrieNode(Some(";"), Empty)
-    )
 )
