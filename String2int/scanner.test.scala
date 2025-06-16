@@ -45,17 +45,31 @@ class scannerTest extends FunSuite {
     assertEquals(scanOnce("0x_"), IllegalToken("0x"))
   }
 
+  test("integers with underscores") {
+    assertEquals(scanOnce("1_000"), IntToken("1_000", BigInt(1000)))
+    assertEquals(scanOnce("0_000"), IntToken("0_000", BigInt(0)))
+    assertEquals(scanOnce("0xFF_FF"), IntToken("0xFF_FF", BigInt(65535)))
+    assertEquals(scanOnce("0b1111_0000"), IntToken("0b1111_0000", BigInt(240)))
+
+    assertEquals(scanOnce("1000_"), IllegalToken("1000_"))
+  }
+
   test("floating point numbers") {
+    // Note:
+    // 123.456, 6.02E23, 6.626E-34, .999 and so on are inexact numbers
+    // that means they possibly have rounding errors.
+    // It is neccessary to give string literal to BigDecimal constructor.
     assertEquals(scanOnce("0.0"), DecimalToken("0.0", BigDecimal(0)))
     assertEquals(scanOnce("1.0"), DecimalToken("1.0", BigDecimal(1)))
     assertEquals(scanOnce("123.456"), DecimalToken("123.456", BigDecimal("123.456")))
     assertEquals(scanOnce("1.024e3"), DecimalToken("1.024e3", BigDecimal(1024)))
     assertEquals(scanOnce("6.02E23"), DecimalToken("6.02E23", BigDecimal("6.02e23")))
     assertEquals(scanOnce("6.626E-34"), DecimalToken("6.626E-34", BigDecimal("6.626e-34")))
-    assertEquals(scanOnce("1e10"), DecimalToken("1e10", BigDecimal("1E10")))
+    assertEquals(scanOnce("1e10"), DecimalToken("1e10", BigDecimal(1E10)))
     assertEquals(scanOnce("7E-9"), DecimalToken("7E-9", BigDecimal("7e-9")))
     assertEquals(scanOnce(".999"), DecimalToken(".999", BigDecimal(".999")))
-    assertEquals(scanOnce("1."), DecimalToken("1.", BigDecimal("1.0")))
+    assertEquals(scanOnce(".0"), DecimalToken(".0", BigDecimal(0.0)))
+    assertEquals(scanOnce("1."), DecimalToken("1.", BigDecimal(1.0)))
     assertEquals(scanOnce(".999E3"), DecimalToken(".999E3", BigDecimal(999)))
     assertEquals(scanOnce("1.E3"), DecimalToken("1.E3", BigDecimal(1000)))
   }
@@ -67,10 +81,39 @@ class scannerTest extends FunSuite {
     assertEquals(scanOnce("1E-"), IllegalToken("1E-"))
     assertEquals(scanOnce("1e+"), IllegalToken("1e+"))
     assertEquals(scanOnce("1E+"), IllegalToken("1E+"))
+    assertEquals(scanOnce(".e10"), SymbolToken("."))
+  }
+
+  test("hexadecimal floating point numbers") {
+    assertEquals(scanOnce("0x1.0p0"), DoubleToken("0x1.0p0", 1.0))
+    assertEquals(scanOnce("0x1.8p2"), DoubleToken("0x1.8p2", 6.0))
+    assertEquals(scanOnce("0xe.0P-3"), DoubleToken("0xe.0P-3", 1.75))
+    assertEquals(scanOnce("0XffP-2"), DoubleToken("0XffP-2", 63.75))
+    assertEquals(scanOnce("0x.fP3"), DoubleToken("0x.fP3", 7.5))
+
+    assertEquals(scanOnce("0x1.0p0f"), FloatToken("0x1.0p0f", 1.0f))
+    assertEquals(scanOnce("0x1.8p2f"), FloatToken("0x1.8p2f", 6.0f))
+    assertEquals(scanOnce("0xe.0P-3f"), FloatToken("0xe.0P-3f", 1.75f))
+    assertEquals(scanOnce("0XffP-2f"), FloatToken("0XffP-2f", 63.75f))
+    assertEquals(scanOnce("0x.fP3f"), FloatToken("0x.fP3f", 7.5f))
+
+    assertEquals(scanOnce("0x1.0p0d"), DoubleToken("0x1.0p0d", 1.0))
+    assertEquals(scanOnce("0x1.8p2d"), DoubleToken("0x1.8p2d", 6.0))
+    assertEquals(scanOnce("0xe.0P-3d"), DoubleToken("0xe.0P-3d", 1.75))
+    assertEquals(scanOnce("0XffP-2d"), DoubleToken("0XffP-2d", 63.75))
+    assertEquals(scanOnce("0x.fP3d"), DoubleToken("0x.fP3d", 7.5))
+
+    assertEquals(scanOnce("0x1.2"), IllegalToken("0x1.2"))
+    assertEquals(scanOnce("0x1.2pf"), IllegalToken("0x1.2p"))
+    assertEquals(scanOnce("0x1.2P"), IllegalToken("0x1.2P"))
+    assertEquals(scanOnce("0x1.2p+"), IllegalToken("0x1.2p+"))
+    assertEquals(scanOnce("0x1.2P-"), IllegalToken("0x1.2P-"))
+    assertEquals(scanOnce("0x1.2pff"), IllegalToken("0x1.2p"))
   }
 
   test("comments") {
     assertEquals(scanOnce("// comment\n"), CommentToken("// comment"))
+    assertEquals(scanOnce("// comment"), CommentToken("// comment"))
     assertEquals(scanOnce("/* multi-line\ncomment */"), CommentToken("/* multi-line\ncomment */"))
     assertEquals(scanOnce("/***/"), CommentToken("/***/"))
     assertEquals(scanOnce("/* unclosed comment"), IllegalToken("/* unclosed comment"))
@@ -83,5 +126,13 @@ class scannerTest extends FunSuite {
     assertEquals(scanOnce("_privateVar"), IdToken("_privateVar"))
     assertEquals(scanOnce("variableName"), IdToken("variableName"))
     assertEquals(scanOnce("ClassName"), IdToken("ClassName"))
+  }
+
+  test("punctuations") {
+    assertEquals(scanOnce(";"), SymbolToken(";"))
+    assertEquals(scanOnce("=="), SymbolToken("=="))
+    assertEquals(scanOnce("=-"), SymbolToken("="))
+    assertEquals(scanOnce("&&="), SymbolToken("&&="))
+    assertEquals(scanOnce("/="), SymbolToken("/="))
   }
 }
