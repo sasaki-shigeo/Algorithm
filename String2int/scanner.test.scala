@@ -56,8 +56,8 @@ class scannerTest extends FunSuite {
 
   test("floating point numbers") {
     // Note:
-    // 123.456, 6.02E23, 6.626E-34, .999 and so on are inexact numbers
-    // that means they possibly have rounding errors.
+    // 123.456, 6.02E23, 6.626E-34, .999 and so on are inexact
+    // that means the numbers possibly have rounding errors;
     // It is neccessary to give string literal to BigDecimal constructor.
     assertEquals(scanOnce("0.0"), DecimalToken("0.0", BigDecimal(0)))
     assertEquals(scanOnce("1.0"), DecimalToken("1.0", BigDecimal(1)))
@@ -72,6 +72,18 @@ class scannerTest extends FunSuite {
     assertEquals(scanOnce("1."), DecimalToken("1.", BigDecimal(1.0)))
     assertEquals(scanOnce(".999E3"), DecimalToken(".999E3", BigDecimal(999)))
     assertEquals(scanOnce("1.E3"), DecimalToken("1.E3", BigDecimal(1000)))
+    assertEquals(scanOnce("3.1415_92653_58979"),
+                          DecimalToken("3.1415_92653_58979", BigDecimal("3.14159265358979")))
+
+    assertEquals(scanOnce("1.0f"), FloatToken("1.0f", 1.0f))
+    assertEquals(scanOnce("6.02e23f"), FloatToken("6.02e23f", 6.02e23f))
+    assertEquals(scanOnce(".0f"), FloatToken(".0f", 0.0f))
+    assertEquals(scanOnce("1f"), FloatToken("1f", 1.0f))
+
+    assertEquals(scanOnce("1.0d"), DoubleToken("1.0d", 1.0))
+    assertEquals(scanOnce("6.02e23d"), DoubleToken("6.02e23d", 6.02e23))
+    assertEquals(scanOnce(".0d"), DoubleToken(".0d", 0.0))
+    assertEquals(scanOnce("1d"), DoubleToken("1d", 1.0))
   }
 
   test("illegal floating point numbers") {
@@ -82,6 +94,8 @@ class scannerTest extends FunSuite {
     assertEquals(scanOnce("1e+"), IllegalToken("1e+"))
     assertEquals(scanOnce("1E+"), IllegalToken("1E+"))
     assertEquals(scanOnce(".e10"), SymbolToken("."))
+    assertEquals(scanOnce("3.14159_"), IllegalToken("3.14159_"))
+    assertEquals(scanOnce("3._14159"), IllegalToken("3._"))
   }
 
   test("hexadecimal floating point numbers") {
@@ -129,10 +143,69 @@ class scannerTest extends FunSuite {
   }
 
   test("punctuations") {
-    assertEquals(scanOnce(";"), SymbolToken(";"))
-    assertEquals(scanOnce("=="), SymbolToken("=="))
-    assertEquals(scanOnce("=-"), SymbolToken("="))
+    assertEquals(scanOnce("!"), SymbolToken("!"))
+    assertEquals(scanOnce("!="), SymbolToken("!="))
+    assertEquals(scanOnce("!!"), SymbolToken("!"))
+    assertEquals(scanOnce("%"), SymbolToken("%"))
+    assertEquals(scanOnce("%="), SymbolToken("%="))
+    assertEquals(scanOnce("&"), SymbolToken("&"))
+    assertEquals(scanOnce("&="), SymbolToken("&="))
+    assertEquals(scanOnce("&&"), SymbolToken("&&"))
     assertEquals(scanOnce("&&="), SymbolToken("&&="))
+    assertEquals(scanOnce("&&!"), SymbolToken("&&"))
+    assertEquals(scanOnce("&~"), SymbolToken("&"))   
+    assertEquals(scanOnce("("), SymbolToken("("))
+    assertEquals(scanOnce(")"), SymbolToken(")"))
+    assertEquals(scanOnce("*"), SymbolToken("*"))
+    assertEquals(scanOnce("*="), SymbolToken("*="))
+    assertEquals(scanOnce(","), SymbolToken(","))
+    assertEquals(scanOnce("+"), SymbolToken("+"))
+    assertEquals(scanOnce("+="), SymbolToken("+="))
+    assertEquals(scanOnce("++"), SymbolToken("++"))
+    assertEquals(scanOnce("++="), SymbolToken("++="))
+    assertEquals(scanOnce("-"), SymbolToken("-"))
+    assertEquals(scanOnce("-="), SymbolToken("-="))
+    assertEquals(scanOnce("--"), SymbolToken("--"))
+    assertEquals(scanOnce("--="), SymbolToken("--="))
+    // assertEquals(scanOnce("->"), SymbolToken("->"))
+    assertEquals(scanOnce(":"), SymbolToken(":"))
+    assertEquals(scanOnce(";"), SymbolToken(";"))
+    assertEquals(scanOnce("<"), SymbolToken("<"))
+    assertEquals(scanOnce("<<"), SymbolToken("<<"))
+    assertEquals(scanOnce("<<="), SymbolToken("<<="))
+    assertEquals(scanOnce("<="), SymbolToken("<="))
+    assertEquals(scanOnce("="), SymbolToken("="))
+    assertEquals(scanOnce("=="), SymbolToken("=="))
+    // assertEquals(scanOnce("=>"), SymbolToken("=>"))
+    assertEquals(scanOnce("=-"), SymbolToken("="))
+    assertEquals(scanOnce(">"), SymbolToken(">"))
+    assertEquals(scanOnce(">="), SymbolToken(">="))
+    assertEquals(scanOnce(">>"), SymbolToken(">>"))
+    assertEquals(scanOnce(">>="), SymbolToken(">>="))
+    assertEquals(scanOnce(">>>"), SymbolToken(">>>"))
+    assertEquals(scanOnce(">>>="), SymbolToken(">>>="))
+    assertEquals(scanOnce("?"), SymbolToken("?"))
+    assertEquals(scanOnce("["), SymbolToken("["))
+    assertEquals(scanOnce("]"), SymbolToken("]"))
+    assertEquals(scanOnce("{"), SymbolToken("{"))
+    assertEquals(scanOnce("}"), SymbolToken("}"))
+    assertEquals(scanOnce("|"), SymbolToken("|"))
+    assertEquals(scanOnce("|="), SymbolToken("|="))
+    assertEquals(scanOnce("|~"), SymbolToken("|"))
+    assertEquals(scanOnce("||"), SymbolToken("||"))
+    assertEquals(scanOnce("||="), SymbolToken("||="))
+    assertEquals(scanOnce("||!"), SymbolToken("||"))
+    assertEquals(scanOnce("~"), SymbolToken("~"))
+    assertEquals(scanOnce("~="), SymbolToken("~="))
+    assertEquals(scanOnce("^"), SymbolToken("^"))
+    assertEquals(scanOnce("^="), SymbolToken("^="))
+
+    assertEquals(scanOnce("."), SymbolToken("."))
+    // assertEquals(scanOnce(".."), SymbolToken(".."))
+    assertEquals(scanOnce("/"), SymbolToken("/"))
     assertEquals(scanOnce("/="), SymbolToken("/="))
+    // assertEquals(scanOnce("::"), SymbolToken("::"))
+    // assertEquals(scanOnce(":::"), SymbolToken(":::"))
+    // assertEquals(scanOnce("<-"), SymbolToken("<-"))
   }
 }
