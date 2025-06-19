@@ -1,6 +1,5 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <ctype.h>
 #include "str2int.h"
 
 long str2long(char *str) {
@@ -15,7 +14,7 @@ START:
     else if (c == '0') {
         goto ZERO;
     }
-    else if (isdigit(c)) {
+    else if ('0' <= c && c <= '9') {
         result = c - '0';
         goto DEC;
     }
@@ -38,7 +37,7 @@ ZERO:
 
 DEC:
     c = *(str++);
-    if (isdigit(c)) {
+    if ('0' <= c && c <= '9') {
         result *= 10;
         result += c - '0';
         goto DEC;
@@ -60,7 +59,7 @@ OCT:
 
 X:
     c = *(str++);
-    if (isdigit(c)) {
+    if ('0' <= c && c <= '9') {
         result = c - '0';
         goto HEX;
     }
@@ -78,7 +77,7 @@ X:
 
 HEX:
     c = *(str++);
-    if (isdigit(c)) {
+    if ('0' <= c && c <= '9') {
         result *= 16;
         result += c - '0';
         goto HEX;
