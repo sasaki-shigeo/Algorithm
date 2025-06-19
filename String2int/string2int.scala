@@ -1,4 +1,4 @@
-// 
+//
 // Description: A Scala implementation of a parser for integer literals
 //
 
@@ -30,7 +30,7 @@ class StateMachine(input: String) {
         st = START
         acc = 0L
         for (ch <- input) {
-            val TransitionEntry(action, nextState) = transitionFunction(st, ch)
+            val TransitionEntry(action, nextState) = transitionTable(st, ch)
             action(ch)
             st = nextState
         }
@@ -69,10 +69,8 @@ class StateMachine(input: String) {
         acc = 16 * acc + (ch - 'a' + 10)
     }
 
-
-    // This is a mock of the action table.
-    // This function is executed at runtime
-    // while an action table should  computed at compile time.
+    // This function decides the action and the next state at runtime.
+    // while the transition table is built at compile time.
     def transitionFunction(st: State, ch: Char): TransitionEntry = st match {
         case START => ch match {
             case '0' => TransitionEntry(doNothing(_), ZERO)
@@ -124,5 +122,17 @@ class StateMachine(input: String) {
             case _ => TransitionEntry(doNothing(_), ERROR)
         }
         case ERROR => TransitionEntry(doNothing(_), ERROR) 
+    }
+
+    private val table = Vector.tabulate(State.values.size, 128) {
+        (state_ix, char_ix) =>
+        val st = State.values(state_ix)
+        val ch = char_ix.toChar
+        transitionFunction(st, ch)
+    }
+
+    // transition table build when compile time
+    def transitionTable(st: State, ch: Char): TransitionEntry = {
+        table(st.ordinal)(ch.toInt)
     }
 }
